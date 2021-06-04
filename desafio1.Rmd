@@ -1,0 +1,40 @@
+---
+title: "Desafio 1.0"
+output: html_document
+---
+
+```{r}
+library(readxl)
+donaciones <- read_xlsx("Donaciones_2019.xlsx")
+donaciones <- donaciones[, c(3,4,7)]
+
+###Se intento con una base de datos de proyectos que no sirvio
+##proyectos <- read_xlsx("ProyectosChile.xlsx")
+##proyectos <- select(proyectos, Nombre, Regiones)
+##proyectos <- rename(proyectos, c("NOMBRE DEL PROYECTO"="Nombre"))
+
+proyectos1 <- read_xlsx("DonacionesProyectos.xlsx")
+proyectos1 <- select(proyectos1, 'NOMBRE PROYECTO', 'NOMBRE REGIÓN(ES)')
+proyectos1 <- rename(proyectos1, c("NOMBRE DEL PROYECTO"="NOMBRE PROYECTO"))
+
+mergedonacionesproyectos <- merge(donaciones, proyectos1, by = "NOMBRE DEL PROYECTO")
+```
+
+```{r}
+library(stringr)
+donaciones$`NOMBRE DEL PROYECTO` <- str_trim(donaciones$`NOMBRE DEL PROYECTO`, side = "both")
+proyectos$`NOMBRE DEL PROYECTO` <- str_trim(proyectos$`NOMBRE DEL PROYECTO`, side = "both")
+proyectos1$`NOMBRE DEL PROYECTO` <- str_trim(proyectos1$`NOMBRE DEL PROYECTO`, side = "both")
+
+donaciones$`NOMBRE DEL PROYECTO` <- str_to_lower(donaciones$`NOMBRE DEL PROYECTO`, locale = "es")
+proyectos$`NOMBRE DEL PROYECTO` <- str_to_lower(proyectos$`NOMBRE DEL PROYECTO`, locale = "es")
+proyectos1$`NOMBRE DEL PROYECTO` <- str_to_lower(proyectos1$`NOMBRE DEL PROYECTO`, locale = "es")
+
+donaciones$`NOMBRE DEL PROYECTO` <- chartr('áéíóúñ','aeioun',
+                          donaciones$`NOMBRE DEL PROYECTO`)
+proyectos$`NOMBRE DEL PROYECTO` <- chartr('áéíóúñ','aeioun',
+                          proyectos$`NOMBRE DEL PROYECTO`)
+proyectos1$`NOMBRE DEL PROYECTO` <- chartr('áéíóúñ','aeioun',
+                          proyectos1$`NOMBRE DEL PROYECTO`)
+
+```

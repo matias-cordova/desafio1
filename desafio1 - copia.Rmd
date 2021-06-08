@@ -1,0 +1,124 @@
+---
+title: "Desafio 1.0"
+output: html_document
+---
+
+```{r}
+library(readxl)
+library(dplyr)
+donaciones <- read_excel("~/GitHub/desafio1/Donaciones_2017.xlsx", 
+    col_types = c("numeric", "date", "text", 
+        "numeric", "text", "text", "text", 
+        "text", "numeric", "numeric", "numeric", 
+        "numeric"))
+donaciones <- donaciones[, c(1, 3, 5, 7, 8, 11)]
+
+###Se intento con una base de datos de proyectos que no sirvio
+##proyectos <- read_xlsx("ProyectosChile.xlsx")
+##proyectos <- select(proyectos, Nombre, Regiones)
+##proyectos <- rename(proyectos, c("NOMBRE DEL PROYECTO"="Nombre"))
+
+proyectos1 <- read_xlsx("DonacionesProyectos.xlsx")
+proyectos1 <- select(proyectos1, 'NOMBRE INSTITUCIÓN', 'NOMBRE PROYECTO', 'FECHA APROBACIÓN','NOMBRE REGIÓN(ES)', 'ÁMBITO ACCIÓN')
+proyectos1 <- rename(proyectos1, c("NOMBRE DEL PROYECTO"="NOMBRE PROYECTO"))
+proyectos1 <- rename(proyectos1, c("DONATARIO"="NOMBRE INSTITUCIÓN"))
+
+##con slice() se eliminan las filas con pryectos repetidos
+proyectos1 <- slice(group_by(proyectos1, `NOMBRE DEL PROYECTO`), 1)
+##misma linea pero con %>% 
+##proyectos1 <- proyectos1 %>%
+##              group_by(`NOMBRE DEL PROYECTO`) %>%
+##              slice(1)
+```
+
+```{r}
+library(stringr)
+donaciones$`NOMBRE DEL PROYECTO` <- str_trim(donaciones$`NOMBRE DEL PROYECTO`, side = "both")
+proyectos1$`NOMBRE DEL PROYECTO` <- str_trim(proyectos1$`NOMBRE DEL PROYECTO`, side = "both")
+donaciones$`DONATARIO` <- str_trim(donaciones$`DONATARIO`, side = "both")
+proyectos1$`DONATARIO` <- str_trim(proyectos1$`DONATARIO`, side = "both")
+
+donaciones$`NOMBRE DEL PROYECTO` <- toupper(donaciones$`NOMBRE DEL PROYECTO`)
+proyectos1$`NOMBRE DEL PROYECTO` <- toupper(proyectos1$`NOMBRE DEL PROYECTO`)
+donaciones$`DONATARIO` <- toupper(donaciones$`DONATARIO`)
+proyectos1$`DONATARIO` <- toupper(proyectos1$`DONATARIO`)
+proyectos1$`NOMBRE REGIÓN(ES)` <- toupper(proyectos1$`NOMBRE REGIÓN(ES)`)
+
+donaciones$`NOMBRE DEL PROYECTO` <- chartr('ÁÉÍÓÚÑ','AEIOUN',
+                          donaciones$`NOMBRE DEL PROYECTO`)
+proyectos1$`NOMBRE DEL PROYECTO` <- chartr('ÁÉÍÓÚÑ','AEIOUN',
+                          proyectos1$`NOMBRE DEL PROYECTO`)
+donaciones$`DONATARIO` <- chartr('ÁÉÍÓÚÑ','AEIOUN',
+                          donaciones$`DONATARIO`)
+proyectos1$`DONATARIO` <- chartr('ÁÉÍÓÚÑ','AEIOUN',
+                          proyectos1$`DONATARIO`)
+proyectos1$`NOMBRE REGIÓN(ES)` <- chartr('ÁÉÍÓÚÑ','AEIOUN',
+                          proyectos1$`NOMBRE REGIÓN(ES)`)
+
+mergedonacionesproyectos <- merge(donacionesData, proyectos1, by = c("NOMBRE DEL PROYECTO", "DONATARIO"))
+
+##proyectos1$`NOMBRE REGIÓN(ES)` = strsplit(proyectos1$`NOMBRE REGIÓN(ES)`, split=", ")
+
+##listaRegiones <- strsplit(proyectos1$`NOMBRE REGIÓN(ES)`,",",fixed=TRUE)
+##m <- max(sapply(listaRegiones, length))
+##dataRegiones <- do.call(rbind, lapply(listaRegiones, function(x) {c(x,rep(NA,m))[1:m]}))
+
+library(tidyverse)
+proyectos1 <- separate(proyectos1, `NOMBRE REGIÓN(ES)`, into = c("Región 1", "Región 2", "Región 3","Región 4", "Región 5", "Región 6","Región 7", "Región 8", "Región 9","Región 10", "Región 11", "Región 12","Región 13", "Región 14", "Región 15"), sep = ",")
+
+
+```
+
+```{r}
+# Cargamos credenciales de .Renviron
+# API key se obtiene para este caso en
+# https://datos.observatoriologistico.cl/developers/
+api_key<-"yIXuxN8JDzo66w2fuVsYVEvLeuqyzHNQIxsa2Ltx"
+install.packages("devtools")
+library(devtools)
+devtools::install_github("FvD/junr")
+library("junr")
+# https://mran.microsoft.com/snapshot/2017-02-04/web/packages/junr/README.html
+# Descargamos datos del pib regional
+base_url <- "https://api.datos.observatoriologistico.cl/api/v2/datastreams/"
+dataOBSLog <- get_data(base_url, api_key,"INACE-2015-2016")
+
+dataOBSLog <- rename(dataOBSLog, c("NOMBRE REGIÓN(ES)"="REGIÓN"))
+dataOBSLog <- filter(dataOBSLog, AÑO==2017)
+dataOBSLog$`NOMBRE REGIÓN(ES)` <- toupper(dataOBSLog$`NOMBRE REGIÓN(ES)`)
+dataOBSLog$`NOMBRE REGIÓN(ES)` <- chartr('ÁÉÍÓÚÑ','AEIOUN',
+                          dataOBSLog$`NOMBRE REGIÓN(ES)`)
+##dataOBS - proyectos1
+##LIBERTADOR GENERAL BERNARDO O'HIGGINS - LIBERTADOR GRAL.BERNARDO O’HIGGINS
+##BIO-BIO - BIOBIO
+##ARAUCANIA - LA ARAUCANIA
+##AISEN DEL GENERAL CARLOS IBANEZ DEL CAMPO - AYSEN DEL GRAL. CARLOS IBANEZ DEL CAMPO
+##
+
+mergeprueba <- mergedonacionesproyectos
+
+##cambio formato de fechas
+mergeprueba$`FECHA APROBACIÓN` <- format(mergeprueba$`FECHA APROBACIÓN`,"%d/%m/%Y") 
+
+##cambio letras a mayusculas
+mergeprueba$`DONANTE` <- toupper(mergeprueba$`DONANTE`)
+mergeprueba$`DONATARIO` <- toupper(mergeprueba$`DONATARIO`)
+
+##homogenizacion ruts
+mergeprueba$RUT <- gsub('[.]', '', mergeprueba$RUT)
+listaRutSinGuion <- substr(mergeprueba$RUT, 1, (nchar(mergeprueba$RUT)-1))
+listaGuionesRut <- substr(mergeprueba$RUT, nchar(mergeprueba$RUT), nchar(mergeprueba$RUT))
+mergeprueba$RUT <- paste0(listaRutSinGuion, sep="-", listaGuionesRut)
+
+##homogenizacion montos
+mergeprueba$`MONTO TOTAL DONACIÓN` <- gsub('[$]', '', mergeprueba$`MONTO TOTAL DONACIÓN`)
+mergeprueba$`MONTO TOTAL DONACIÓN` <- gsub('[.]', '', mergeprueba$`MONTO TOTAL DONACIÓN`)
+
+
+x <- data.frame(proyecto = 1:4, región = c("10.550,4", "10,550.4", "19550,4", "19550.4"))
+x$región <- as.double(x$región)
+
+```
+
+
+

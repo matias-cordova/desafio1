@@ -6,6 +6,7 @@ output: html_document
 ```{r}
 library(readxl)
 library(dplyr)
+options(scipen = 999)
 donaciones <- read_excel("~/GitHub/desafio1/Donaciones_2017.xlsx", 
     col_types = c("numeric", "date", "text", 
         "numeric", "text", "text", "text", 
@@ -55,18 +56,16 @@ proyectos1$`DONATARIO` <- chartr('ÁÉÍÓÚÑ','AEIOUN',
 proyectos1$`NOMBRE REGIÓN(ES)` <- chartr('ÁÉÍÓÚÑ','AEIOUN',
                           proyectos1$`NOMBRE REGIÓN(ES)`)
 
-mergedonacionesproyectos <- merge(donacionesData, proyectos1, by = c("NOMBRE DEL PROYECTO", "DONATARIO"))
+library(tidyverse)
+proyectos1 <- separate(proyectos1, `NOMBRE REGIÓN(ES)`, into = c("Región 1", "Región 2", "Región 3","Región 4", "Región 5", "Región 6","Región 7", "Región 8", "Región 9","Región 10", "Región 11", "Región 12","Región 13", "Región 14", "Región 15"), sep = ",")
+
+mergedonacionesproyectos <- merge(donaciones, proyectos1, by = c("NOMBRE DEL PROYECTO", "DONATARIO"))
 
 ##proyectos1$`NOMBRE REGIÓN(ES)` = strsplit(proyectos1$`NOMBRE REGIÓN(ES)`, split=", ")
 
 ##listaRegiones <- strsplit(proyectos1$`NOMBRE REGIÓN(ES)`,",",fixed=TRUE)
 ##m <- max(sapply(listaRegiones, length))
 ##dataRegiones <- do.call(rbind, lapply(listaRegiones, function(x) {c(x,rep(NA,m))[1:m]}))
-
-library(tidyverse)
-proyectos1 <- separate(proyectos1, `NOMBRE REGIÓN(ES)`, into = c("Región 1", "Región 2", "Región 3","Región 4", "Región 5", "Región 6","Región 7", "Región 8", "Región 9","Región 10", "Región 11", "Región 12","Región 13", "Región 14", "Región 15"), sep = ",")
-
-
 ```
 
 ```{r}
@@ -74,20 +73,44 @@ proyectos1 <- separate(proyectos1, `NOMBRE REGIÓN(ES)`, into = c("Región 1", "
 # API key se obtiene para este caso en
 # https://datos.observatoriologistico.cl/developers/
 api_key<-"yIXuxN8JDzo66w2fuVsYVEvLeuqyzHNQIxsa2Ltx"
-install.packages("devtools")
+##install.packages("devtools")
 library(devtools)
-devtools::install_github("FvD/junr")
+##devtools::install_github("FvD/junr")
 library("junr")
 # https://mran.microsoft.com/snapshot/2017-02-04/web/packages/junr/README.html
 # Descargamos datos del pib regional
 base_url <- "https://api.datos.observatoriologistico.cl/api/v2/datastreams/"
-dataOBSLog <- get_data(base_url, api_key,"INACE-2015-2016")
+dataOBSLog <- get_data(base_url, api_key,"POBLA-DE-CHILE-2002-2020")
 
 dataOBSLog <- rename(dataOBSLog, c("NOMBRE REGIÓN(ES)"="REGIÓN"))
-dataOBSLog <- filter(dataOBSLog, AÑO==2017)
+dataOBSLog <- filter(dataOBSLog, AÑO==2004)
 dataOBSLog$`NOMBRE REGIÓN(ES)` <- toupper(dataOBSLog$`NOMBRE REGIÓN(ES)`)
 dataOBSLog$`NOMBRE REGIÓN(ES)` <- chartr('ÁÉÍÓÚÑ','AEIOUN',
                           dataOBSLog$`NOMBRE REGIÓN(ES)`)
+dataOBSLog$POBLACIÓN <- gsub('[,]', '', dataOBSLog$POBLACIÓN)
+dataOBSLog$POBLACIÓN <- as.numeric(dataOBSLog$POBLACIÓN)
+
+dataOBSLog1 <- summarise(group_by(dataOBSLog, `NOMBRE REGIÓN(ES)`),POBLACIÓN = sum(POBLACIÓN), n = n())
+
+dataOBSLog1$`NOMBRE REGIÓN(ES)` <- 
+  gsub('AYSEN DEL GENERAL CARLOS IBANEZ DEL CAMPO', 'AYSEN DEL GRAL. CARLOS IBANEZ DEL CAMPO', dataOBSLog1$`NOMBRE REGIÓN(ES)`)
+dataOBSLog1$`NOMBRE REGIÓN(ES)` <- 
+  gsub("LIBERTADOR GENERAL BERNARDO O'HIGGINS", "LIBERTADOR GRAL.BERNARDO O’HIGGINS", dataOBSLog1$`NOMBRE REGIÓN(ES)`)
+
+library(reshape2)
+mergedonacionesproyectos <- melt(mergedonacionesproyectos, id.vars = c("NOMBRE DEL PROYECTO", "DONATARIO", "AÑO", "DONANTE", "RUT", "MONTO TOTAL DONACIÓN", "FECHA APROBACIÓN", "ÁMBITO ACCIÓN"))
+mergedonacionesproyectos <- rename(mergedonacionesproyectos, c("NOMBRE REGIÓN(ES)"="value"))
+
+mergedonacionesproyectos <- merge(mergedonacionesproyectos, dataOBSLog1, by = c("NOMBRE REGIÓN(ES)"))
+
+
+
+##dataOBSLog1 <- rename(dataOBSLog1, c("Región 1"="NOMBRE REGIÓN(ES)"))
+##mergedonacionesAPI <- merge(mergedonacionesproyectos, dataOBSLog1, by = c("NOMBRE DEL PROYECTO", "DONATARIO"))
+
+
+
+
 ##dataOBS - proyectos1
 ##LIBERTADOR GENERAL BERNARDO O'HIGGINS - LIBERTADOR GRAL.BERNARDO O’HIGGINS
 ##BIO-BIO - BIOBIO
@@ -115,8 +138,8 @@ mergeprueba$`MONTO TOTAL DONACIÓN` <- gsub('[$]', '', mergeprueba$`MONTO TOTAL 
 mergeprueba$`MONTO TOTAL DONACIÓN` <- gsub('[.]', '', mergeprueba$`MONTO TOTAL DONACIÓN`)
 
 
-x <- data.frame(proyecto = 1:4, región = c("10.550,4", "10,550.4", "19550,4", "19550.4"))
-x$región <- as.double(x$región)
+##x <- data.frame(proyecto = 1:4, región = c("10.550,4", "10,550.4", "19550,4", "19550.4"))
+##x$región <- as.double(x$región)
 
 ```
 

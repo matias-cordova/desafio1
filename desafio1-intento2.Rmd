@@ -1,0 +1,110 @@
+---
+title: "Desafio 1 intento 2"
+output: html_document
+---
+
+```{r}
+library(readxl)
+library(dplyr)
+options(scipen = 999)
+donaciones <- read_excel("~/GitHub/desafio1/Donaciones_2017.xlsx", 
+    col_types = c("numeric", "date", "text", 
+        "numeric", "text", "text", "text", 
+        "text", "numeric", "numeric", "numeric", 
+        "numeric"))
+donaciones <- donaciones[, c(1, 3, 5, 7, 8, 11)]
+
+paresProyectosDonatarios <- select(donaciones,"NOMBRE DEL PROYECTO", "DONATARIO")
+paresProyectosDonatarios <- unique(paresProyectosDonatarios)
+
+proyectos1 <- read_xlsx("DonacionesProyectos.xlsx")
+proyectos1 <- select(proyectos1, 'NOMBRE INSTITUCIÓN', 'NOMBRE PROYECTO', 'FECHA APROBACIÓN','NOMBRE REGIÓN(ES)', 'ÁMBITO ACCIÓN')
+proyectos1 <- rename(proyectos1, c("NOMBRE DEL PROYECTO"="NOMBRE PROYECTO"))
+proyectos1 <- rename(proyectos1, c("DONATARIO"="NOMBRE INSTITUCIÓN"))
+
+
+library(stringr)
+paresProyectosDonatarios$`NOMBRE DEL PROYECTO` <- str_trim(paresProyectosDonatarios$`NOMBRE DEL PROYECTO`, side = "both")
+proyectos1$`NOMBRE DEL PROYECTO` <- str_trim(proyectos1$`NOMBRE DEL PROYECTO`, side = "both")
+paresProyectosDonatarios$`DONATARIO` <- str_trim(paresProyectosDonatarios$`DONATARIO`, side = "both")
+proyectos1$`DONATARIO` <- str_trim(proyectos1$`DONATARIO`, side = "both")
+
+paresProyectosDonatarios$`NOMBRE DEL PROYECTO` <- toupper(paresProyectosDonatarios$`NOMBRE DEL PROYECTO`)
+proyectos1$`NOMBRE DEL PROYECTO` <- toupper(proyectos1$`NOMBRE DEL PROYECTO`)
+paresProyectosDonatarios$`DONATARIO` <- toupper(paresProyectosDonatarios$`DONATARIO`)
+proyectos1$`DONATARIO` <- toupper(proyectos1$`DONATARIO`)
+proyectos1$`NOMBRE REGIÓN(ES)` <- toupper(proyectos1$`NOMBRE REGIÓN(ES)`)
+
+paresProyectosDonatarios$`NOMBRE DEL PROYECTO` <- chartr('ÁÉÍÓÚÑ','AEIOUN',
+                          paresProyectosDonatarios$`NOMBRE DEL PROYECTO`)
+proyectos1$`NOMBRE DEL PROYECTO` <- chartr('ÁÉÍÓÚÑ','AEIOUN',
+                          proyectos1$`NOMBRE DEL PROYECTO`)
+paresProyectosDonatarios$`DONATARIO` <- chartr('ÁÉÍÓÚÑ','AEIOUN',
+                          paresProyectosDonatarios$`DONATARIO`)
+proyectos1$`DONATARIO` <- chartr('ÁÉÍÓÚÑ','AEIOUN',
+                          proyectos1$`DONATARIO`)
+proyectos1$`NOMBRE REGIÓN(ES)` <- chartr('ÁÉÍÓÚÑ','AEIOUN',
+                          proyectos1$`NOMBRE REGIÓN(ES)`)
+
+mergedonacionesproyectosaux1 <- merge(paresProyectosDonatarios, proyectos1, by = c("NOMBRE DEL PROYECTO", "DONATARIO"))
+
+
+```
+
+```{r}
+install.packages('fuzzywuzzyR')
+devtools::install_github(repo = 'mlampros/fuzzywuzzyR')
+library(fuzzywuzzyR)
+
+x <- c("frodo baggins","new yorks","daddy yankee")
+y <- c("frodo bag", "new york", "daddy yanke")
+
+numerox <- as.integer(length(x))
+numeroy <- as.integer(length(y))
+for (i in 1:numerox){
+  s1 = x[i]
+  for (j in 1:numeroy){
+    s2 = y[j]
+    init = SequenceMatcher$new(string1 = s1, string2 = s2)
+    ratio = init$ratio()
+    if (ratio >0.9){
+      y[j] <- x[i]
+    }
+  }
+}
+
+numerox <- as.integer(length(paresProyectosDonatarios$`NOMBRE DEL PROYECTO`))
+numeroy <- as.integer(length(proyectos1$`NOMBRE DEL PROYECTO`))
+for (i in 1:numerox){
+  s1 = paresProyectosDonatarios$`NOMBRE DEL PROYECTO`[i]
+  for (j in 1:numeroy){
+    s2 = proyectos1$`NOMBRE DEL PROYECTO`[j]
+    init = SequenceMatcher$new(string1 = s1, string2 = s2)
+    ratio = init$ratio()
+    if (ratio >0.9){
+      y[j] <- x[i]
+    }
+  }
+}
+
+x <- paresProyectosDonatarios$`NOMBRE DEL PROYECTO`
+y <- proyectos1$`NOMBRE DEL PROYECTO`
+numerox <- as.integer(length(x))
+numeroy <- as.integer(length(y))
+for (i in 1:numerox){
+  s1 = x[i]
+  for (j in 1:numeroy){
+    s2 = y[j]
+    init = SequenceMatcher$new(string1 = s1, string2 = s2)
+    ratio = init$ratio()
+    if (ratio >0.9){
+      y[j] <- x[i]
+    }
+  }
+}
+
+auxi <- as.data.frame(x)
+auxi1 <- as.data.frame(y)
+```
+
+

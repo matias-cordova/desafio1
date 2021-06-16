@@ -59,7 +59,10 @@ proyectos1$`NOMBRE REGIÓN(ES)` <- chartr('ÁÉÍÓÚÑ','AEIOUN',
 library(tidyverse)
 proyectos1 <- separate(proyectos1, `NOMBRE REGIÓN(ES)`, into = c("Región 1", "Región 2", "Región 3","Región 4", "Región 5", "Región 6","Región 7", "Región 8", "Región 9","Región 10", "Región 11", "Región 12","Región 13", "Región 14", "Región 15"), sep = ",")
 
-mergedonacionesproyectos <- merge(donaciones, proyectos1, by = c("NOMBRE DEL PROYECTO", "DONATARIO"))
+aux<-unique(donaciones %>% select(`NOMBRE DEL PROYECTO`, `DONATARIO`))
+##aux<-data.frame(proyecto=levels(as.factor(mergedonacionesproyectos %>% select(`NOMBRE DEL PROYECTO)
+
+mergedonacionesproyectosaux <- merge(aux, proyectos1, by = c("NOMBRE DEL PROYECTO", "DONATARIO"))
 
 ##proyectos1$`NOMBRE REGIÓN(ES)` = strsplit(proyectos1$`NOMBRE REGIÓN(ES)`, split=", ")
 
@@ -97,9 +100,55 @@ dataOBSLog1$`NOMBRE REGIÓN(ES)` <-
 dataOBSLog1$`NOMBRE REGIÓN(ES)` <- 
   gsub("LIBERTADOR GENERAL BERNARDO O'HIGGINS", "LIBERTADOR GRAL.BERNARDO O’HIGGINS", dataOBSLog1$`NOMBRE REGIÓN(ES)`)
 
+##se agrega mergedonacionesproyecto1 por si hay algun error en el desarrollo
 library(reshape2)
-mergedonacionesproyectos <- melt(mergedonacionesproyectos, id.vars = c("NOMBRE DEL PROYECTO", "DONATARIO", "AÑO", "DONANTE", "RUT", "MONTO TOTAL DONACIÓN", "FECHA APROBACIÓN", "ÁMBITO ACCIÓN"))
-mergedonacionesproyectos <- rename(mergedonacionesproyectos, c("NOMBRE REGIÓN(ES)"="value"))
+mergedonacionesproyectos1 <- melt(mergedonacionesproyectos, id.vars = c("NOMBRE DEL PROYECTO", "DONATARIO", "AÑO", "DONANTE", "RUT", "MONTO TOTAL DONACIÓN", "FECHA APROBACIÓN", "ÁMBITO ACCIÓN"))
+
+
+listaregiones <- unique(mergedonacionesproyectos1[,c(1,10)])
+mergedonacionesproyectos1 <- dcast(mergedonacionesproyectos1, formula = `NOMBRE DEL PROYECTO`+DONATARIO+AÑO+DONANTE+RUT+`MONTO TOTAL DONACIÓN`+`FECHA APROBACIÓN`+`ÁMBITO ACCIÓN` ~ value, fun.aggregate = length)
+
+```
+
+```{r, echo=FALSE}
+library(reticulate)
+use_python("/usr/local/bin/python")
+```
+
+```{python, echo=FALSE}
+import pandas
+mergedonacionesproyectos2 = r.mergedonacionesproyectos1
+mergedonacionesproyectos2.loc[mergedonacionesproyectos2.ANTOFAGASTA>0,'ANTOFAGASTA']=1
+```
+
+```{r}
+mergedonacionesproyectos2$` ANTOFAGASTA`[mergedonacionesproyectos2$` ANTOFAGASTA` > 1] <- 1
+mergedonacionesproyectos2$`LA ARAUCANIA`[mergedonacionesproyectos2$`LA ARAUCANIA` > 1] <- 1
+mergedonacionesproyectos2$`LIBERTADOR GRAL.BERNARDO O’HIGGINS`[mergedonacionesproyectos2$`LIBERTADOR GRAL.BERNARDO O’HIGGINS` > 1] <- 1
+mergedonacionesproyectos2$`METROPOLITANA DE SANTIAGO`[mergedonacionesproyectos2$`METROPOLITANA DE SANTIAGO` > 1] <- 1
+mergedonacionesproyectos2$TARAPACA[mergedonacionesproyectos2$TARAPACA > 1] <- 1
+mergedonacionesproyectos2$` ARICA Y PARINACOTA`[mergedonacionesproyectos2$` ARICA Y PARINACOTA` > 1] <- 1
+mergedonacionesproyectos2$` ATACAMA`[mergedonacionesproyectos2$` ATACAMA` > 1] <- 1
+mergedonacionesproyectos2$` AYSEN DEL GRAL. CARLOS IBANEZ DEL CAMPO`[mergedonacionesproyectos2$` AYSEN DEL GRAL. CARLOS IBANEZ DEL CAMPO` > 1] <- 1
+mergedonacionesproyectos2$` BIOBIO`[mergedonacionesproyectos2$` BIOBIO` > 1] <- 1
+mergedonacionesproyectos2$` COQUIMBO`[mergedonacionesproyectos2$` COQUIMBO` > 1] <- 1
+mergedonacionesproyectos2$` LA ARAUCANIA`[mergedonacionesproyectos2$` LA ARAUCANIA` > 1] <- 1
+mergedonacionesproyectos2$`LIBERTADOR GRAL.BERNARDO O’HIGGINS`[mergedonacionesproyectos2$`LIBERTADOR GRAL.BERNARDO O’HIGGINS` > 1] <- 1
+mergedonacionesproyectos2$` LOS LAGOS`[mergedonacionesproyectos2$` LOS LAGOS` > 1] <- 1
+mergedonacionesproyectos2$` LOS RIOS`[mergedonacionesproyectos2$` LOS RIOS` > 1] <- 1
+mergedonacionesproyectos2$` MAGALLANES Y DE LA ANTARTICA CHILENA`[mergedonacionesproyectos2$` MAGALLANES Y DE LA ANTARTICA CHILENA` > 1] <- 1
+
+```
+
+```{r}
+mergedonacionesproyectos2 <- mergedonacionesproyectos1
+mergedonacionesproyectos2$`LA ARAUCANIA` <- 
+for(i in mergedonacionesproyectos2$`LA ARAUCANIA`){  
+  if (i > 0)
+  {mergedonacionesproyectos2$`LA ARAUCANIA`=1}
+}
+
+mergedonacionesproyectos1 <- rename(mergedonacionesproyectos1, c("NOMBRE REGIÓN(ES)"="value"))
 
 mergedonacionesproyectos <- merge(mergedonacionesproyectos, dataOBSLog1, by = c("NOMBRE REGIÓN(ES)"))
 
@@ -142,6 +191,10 @@ mergeprueba$`MONTO TOTAL DONACIÓN` <- gsub('[.]', '', mergeprueba$`MONTO TOTAL 
 ##x$región <- as.double(x$región)
 
 ```
+
+
+
+
 
 
 

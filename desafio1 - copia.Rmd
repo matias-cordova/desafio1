@@ -6,21 +6,20 @@ output: html_document
 ```{r}
 library(readxl)
 library(dplyr)
+##se utilisa scipen=999 para que no lea los numeros con notacion cientifica
 options(scipen = 999)
-donaciones <- read_excel("~/GitHub/desafio1/Donaciones_2017.xlsx", 
+
+donacionesDATA <- read_excel("~/GitHub/desafio1/Donaciones_2017.xlsx", 
     col_types = c("numeric", "date", "text", 
         "numeric", "text", "text", "text", 
         "text", "numeric", "numeric", "numeric", 
         "numeric"))
-donaciones <- donaciones[, c(1, 3, 5, 7, 8, 11)]
+##se seleccionan las columnas de: año, nombre proyecto, donatario, donante, rut y monto total donacion
+donaciones <- donacionesDATA[, c(1, 3, 5, 7, 8, 11)]
 
-###Se intento con una base de datos de proyectos que no sirvio
-##proyectos <- read_xlsx("ProyectosChile.xlsx")
-##proyectos <- select(proyectos, Nombre, Regiones)
-##proyectos <- rename(proyectos, c("NOMBRE DEL PROYECTO"="Nombre"))
-
-proyectos1 <- read_xlsx("DonacionesProyectos.xlsx")
-proyectos1 <- select(proyectos1, 'NOMBRE INSTITUCIÓN', 'NOMBRE PROYECTO', 'FECHA APROBACIÓN','NOMBRE REGIÓN(ES)', 'ÁMBITO ACCIÓN')
+##se extrae base de datos de proyectos con atributo "nombre region" de link: https://datasocial.ministeriodesarrollosocial.gob.cl/donaciones/proyectos/3
+proyectosDATA <- read_xlsx("DonacionesProyectos.xlsx")
+proyectos1 <- select(proyectosDATA, 'NOMBRE INSTITUCIÓN', 'NOMBRE PROYECTO', 'FECHA APROBACIÓN','NOMBRE REGIÓN(ES)', 'ÁMBITO ACCIÓN')
 proyectos1 <- rename(proyectos1, c("NOMBRE DEL PROYECTO"="NOMBRE PROYECTO"))
 proyectos1 <- rename(proyectos1, c("DONATARIO"="NOMBRE INSTITUCIÓN"))
 
@@ -34,6 +33,7 @@ proyectos1 <- slice(group_by(proyectos1, `NOMBRE DEL PROYECTO`), 1)
 
 ```{r}
 library(stringr)
+##se utiliza la libreria stringr para homogenizar nombres variables para conectar
 donaciones$`NOMBRE DEL PROYECTO` <- str_trim(donaciones$`NOMBRE DEL PROYECTO`, side = "both")
 proyectos1$`NOMBRE DEL PROYECTO` <- str_trim(proyectos1$`NOMBRE DEL PROYECTO`, side = "both")
 donaciones$`DONATARIO` <- str_trim(donaciones$`DONATARIO`, side = "both")
@@ -60,10 +60,10 @@ library(tidyverse)
 proyectos1 <- separate(proyectos1, `NOMBRE REGIÓN(ES)`, into = c("Región 1", "Región 2", "Región 3","Región 4", "Región 5", "Región 6","Región 7", "Región 8", "Región 9","Región 10", "Región 11", "Región 12","Región 13", "Región 14", "Región 15"), sep = ",")
 
 aux<-unique(donaciones %>% select(`NOMBRE DEL PROYECTO`, `DONATARIO`))
-##aux<-data.frame(proyecto=levels(as.factor(mergedonacionesproyectos %>% select(`NOMBRE DEL PROYECTO)
 
 mergedonacionesproyectosaux <- merge(aux, proyectos1, by = c("NOMBRE DEL PROYECTO", "DONATARIO"))
 
+##intento separacion de columnas regiones
 ##proyectos1$`NOMBRE REGIÓN(ES)` = strsplit(proyectos1$`NOMBRE REGIÓN(ES)`, split=", ")
 
 ##listaRegiones <- strsplit(proyectos1$`NOMBRE REGIÓN(ES)`,",",fixed=TRUE)

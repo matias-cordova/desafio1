@@ -83,6 +83,7 @@ use_python("/usr/local/bin/python")
 ##seleccionamos nombres de proyectos para homogenizar
 x <- proyectos1$`NOMBRE DEL PROYECTO`
 y <- paresProyectosDonatarios$`NOMBRE DEL PROYECTO`
+y <- as.data.frame(y)
 ```
 
 ```{python}
@@ -128,8 +129,9 @@ for i in x:
         if  fuzz.ratio(i,j) > 90:
             y[contj] = x[conti]
 
-print(f"i= {i} y j= {j}")
-print(f"i= {x[conti]} y j= {y[contj]}")
+##podemos usar print() para ver los resultados que cambiaron el nombre
+##print(f"i= {i} y j= {j}")
+##print(f"i= {x[conti]} y j= {y[contj]}")
 ```
 
 

@@ -21,7 +21,7 @@ donaciones <- donacionesDATA[, c(1, 3, 5, 7, 8, 11)]
 paresProyectosDonatarios <- select(donaciones,"NOMBRE DEL PROYECTO", "DONATARIO")
 paresProyectosDonatarios <- unique(paresProyectosDonatarios)
 
-##se extrae base de datos de proyectos con atributo "nombre region" del link: https://datasocial.ministeriodesarrollosocial.gob.cl/donaciones/proyectos/3
+##se extrae una base de datos de proyectos con atributo "nombre region" del link: https://datasocial.ministeriodesarrollosocial.gob.cl/donaciones/proyectos/3
 proyectosDATA <- read_xlsx("DonacionesProyectos.xlsx")
 ##se seleccionan las columnas que nos sirven para el estudio, y se homogenizan los nombres de las columnas
 proyectos1 <- select(proyectosDATA, 'NOMBRE INSTITUCIÓN', 'NOMBRE PROYECTO', 'FECHA APROBACIÓN','NOMBRE REGIÓN(ES)', 'ÁMBITO ACCIÓN')
@@ -34,13 +34,13 @@ paresProyectosDonatarios$`NOMBRE DEL PROYECTO` <- str_trim(paresProyectosDonatar
 proyectos1$`NOMBRE DEL PROYECTO` <- str_trim(proyectos1$`NOMBRE DEL PROYECTO`, side = "both")
 paresProyectosDonatarios$`DONATARIO` <- str_trim(paresProyectosDonatarios$`DONATARIO`, side = "both")
 proyectos1$`DONATARIO` <- str_trim(proyectos1$`DONATARIO`, side = "both")
-##con toupper() llevamos a mayusculas todos los caracteres que nos interesan
+##con toupper() llevamos a mayusculas todos los datos que nos interesan
 paresProyectosDonatarios$`NOMBRE DEL PROYECTO` <- toupper(paresProyectosDonatarios$`NOMBRE DEL PROYECTO`)
 proyectos1$`NOMBRE DEL PROYECTO` <- toupper(proyectos1$`NOMBRE DEL PROYECTO`)
 paresProyectosDonatarios$`DONATARIO` <- toupper(paresProyectosDonatarios$`DONATARIO`)
 proyectos1$`DONATARIO` <- toupper(proyectos1$`DONATARIO`)
 proyectos1$`NOMBRE REGIÓN(ES)` <- toupper(proyectos1$`NOMBRE REGIÓN(ES)`)
-##con chartr() reemplazamos los caracteres con tildes y la Ñ
+##con chartr() reemplazamos los caracteres que pueden generar problemas como los tildes y la Ñ
 paresProyectosDonatarios$`NOMBRE DEL PROYECTO` <- chartr('ÁÉÍÓÚÑ','AEIOUN',
                           paresProyectosDonatarios$`NOMBRE DEL PROYECTO`)
 proyectos1$`NOMBRE DEL PROYECTO` <- chartr('ÁÉÍÓÚÑ','AEIOUN',
@@ -54,7 +54,7 @@ proyectos1$`NOMBRE REGIÓN(ES)` <- chartr('ÁÉÍÓÚÑ','AEIOUN',
 
 ```
 
-AL COMIENZO UTILIZAMOS ESTE CODIGO PARA HOMOGENIZAR NOMBRES, Y FUNCIONÓ, PERO LUEGO TUVIMOS PROBLEMAS CON LA LIBRERIA FUZZYWUZZYR, Y SE OPTO POR UTILIZAR PYHTON.
+AL COMIENZO UTILIZAMOS ESTE CODIGO PARA HOMOGENIZAR NOMBRES, Y FUNCIONÓ BIEN, PERO LUEGO TUVIMOS PROBLEMAS CON LA LIBRERIA FUZZYWUZZYR, Y SE OPTO POR UTILIZAR PYHTON.
 ```{r}
 ##install.packages('fuzzywuzzyR')
 ##devtools::install_github(repo = 'mlampros/fuzzywuzzyR')
@@ -215,7 +215,7 @@ joinProyectosDonaciones <- merge(nombresDonacionesFinal, proyectos1, by = c("NOM
 library(tidyverse)
 ##ahora utilizamos separate() para separar la columna de NOMBRE REGION(ES)
 joinProyectosDonaciones <- separate(joinProyectosDonaciones, `NOMBRE REGIÓN(ES)`, into = c("Región 1", "Región 2", "Región 3","Región 4", "Región 5", "Región 6","Región 7", "Región 8", "Región 9","Región 10", "Región 11", "Región 12","Región 13", "Región 14", "Región 15"), sep = ",")
-##Se utilizan solo 15 regiones, ya que se comprobo que el proyecto que mas regiones de impacto tiene son 15
+##Se utilizan solo 15 regiones, ya que se comprobo que los proyectos que mas regiones de impacto tienen es maximo 15
 ```
 
 ```{r}
@@ -268,12 +268,17 @@ resultado1 <- joinProyectosWide[order(-joinProyectosWide$`POBLACION DE IMPACTO`)
 ##tambien podemos ver facilmente los proyectos que tienen impacto nacional (12 proyectos)
 resultado1 <- filter(joinProyectosWide, `POBLACION DE IMPACTO` == 15562113)
 
-##2: podemos ver la cantidad y proporcion de proyectos que tiene cada region
-resultado2 <- joinProyectosWide[,c(1,5:20)]
-resultado2 <- melt(resultado2, id.vars = c("NOMBRE DEL PROYECTO"))
-resultado2 <- resultado2[,c(2,3)]
-resultado2 <- summarise(group_by(resultado2, `variable`), value = sum(value), `total de proyectos`=n())
-resultado2$`Proporcion con el pais` <- (resultado2$value/resultado2$`total de proyectos`)*100
+##2: podemos ver la poblacion potencial de impacto de cada proyecto.
+resultado2 <- select(joinProyectosWide, `NOMBRE DEL PROYECTO`, `POBLACION DE IMPACTO`)
+
+##3: podemos ver la cantidad y proporcion de proyectos que tiene cada region
+resultado3 <- joinProyectosWide[,c(1,5:20)]
+resultado3 <- melt(resultado3, id.vars = c("NOMBRE DEL PROYECTO"))
+resultado3 <- resultado3[,c(2,3)]
+resultado3 <- summarise(group_by(resultado3, `variable`), value = sum(value), `total de proyectos`=n())
+resultado3$`Proporcion con el pais` <- (resultado3$value/resultado3$`total de proyectos`)*100
+resultado3 <- resultado3[,c(1,2,4)]
+resultado3 <- rename(resultado3, c("numero de proyectos"="value"))
 
 ##3: podemos ver la poblacion potencial de impacto de cada proyecto.
 resultado3 <- select(joinProyectosWide, `NOMBRE DEL PROYECTO`, `POBLACION DE IMPACTO`)
@@ -282,42 +287,7 @@ resultado3 <- select(joinProyectosWide, `NOMBRE DEL PROYECTO`, `POBLACION DE IMP
 resultado4 <- joinProyectosWide[,c(2,21)]
 resultado4 <- summarise(group_by(resultado4, `DONATARIO`), `POBLACION DE IMPACTO` = sum(`POBLACION DE IMPACTO`))
 
-##5: podemos ver la cantidad de poblacion potencial por cada ambito de accion.
+##5: podemos ver la cantidad de poblacion potencial por cada ambito de accion segun su cantidad de proyectos.
 resultado5 <- joinProyectosWide[,c(4,21)]
 resultado5 <- summarise(group_by(resultado5, `ÁMBITO ACCIÓN`), `POBLACION DE IMPACTO` = sum(`POBLACION DE IMPACTO`))
 ```
-
-```{r}
-
-##eliminamos la ultima columna que solo tenia valores NA
-donacionesDATAClean <- donacionesDATA[,c(1:11)]
-
-##cambio formato de fechas
-donacionesDATAClean$FECHA <- format(donacionesDATAClean$FECHA,"%d/%m/%Y") 
-
-##cambio letras a mayusculas
-donacionesDATAClean$`DONANTE` <- toupper(donacionesDATAClean$`DONANTE`)
-donacionesDATAClean$`DONATARIO` <- toupper(donacionesDATAClean$`DONATARIO`)
-donacionesDATAClean$`NOMBRE DEL PROYECTO` <- toupper(donacionesDATAClean$`NOMBRE DEL PROYECTO`)
-
-##homogenizacion ruts
-donacionesDATAClean$RUT <- gsub('[.]', '', donacionesDATAClean$RUT)
-listaRutSinGuion <- substr(donacionesDATAClean$RUT, 1, (nchar(donacionesDATAClean$RUT)-1))
-listaGuionesRut <- substr(donacionesDATAClean$RUT, nchar(donacionesDATAClean$RUT), nchar(donacionesDATAClean$RUT))
-donacionesDATAClean$RUT <- paste0(listaRutSinGuion, sep="-", listaGuionesRut)
-
-##homogenizacion montos
-donacionesDATAClean$`MONTO TOTAL DONACIÓN` <- gsub('[$]', '', donacionesDATAClean$`MONTO TOTAL DONACIÓN`)
-donacionesDATAClean$`MONTO TOTAL DONACIÓN` <- gsub('[.]', '', donacionesDATAClean$`MONTO TOTAL DONACIÓN`)
-
-donacionesDATAClean$`MONTO INSTITUCIÓN` <- gsub('[$]', '', donacionesDATAClean$`MONTO INSTITUCIÓN`)
-donacionesDATAClean$`MONTO INSTITUCIÓN` <- gsub('[.]', '', donacionesDATAClean$`MONTO INSTITUCIÓN`)
-
-donacionesDATAClean$`MONTO FONDO MIXTO` <- gsub('[$]', '', donacionesDATAClean$`MONTO FONDO MIXTO`)
-donacionesDATAClean$`MONTO FONDO MIXTO` <- gsub('[.]', '', donacionesDATAClean$`MONTO FONDO MIXTO`)
-
-##se aplica la funcion str() para ver que todos los campos esten en formato correcto
-str(donacionesDATAClean)
-```
-
-

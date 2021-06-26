@@ -1,2 +1,2 @@
 # desafio1
-Intento desafío 1
+Para cargar el desafio, se debe utilizar "desafio 1 Final.Rmd"
